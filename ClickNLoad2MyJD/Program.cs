@@ -40,6 +40,7 @@ namespace ClickNLoad2MyJD
             if (!InitializeJdownloaderApi())
             {
                 Log("JDownloader initialization failed. Links will only be printed in the log.");
+                AppContext.ShowBalloon("Warning", "JDownloader initialization failed. Links will only be printed in the log.", ToolTipIcon.Warning);
             }
 
             StartListener();
@@ -123,6 +124,7 @@ namespace ClickNLoad2MyJD
                         "MyJDownloader",
                         MessageBoxButtons.YesNo,
                         MessageBoxIcon.Warning);
+                        AppContext.ShowBalloon("Error", "Connection to MyJDownloader API failed.", ToolTipIcon.Error);
 
                     if (result == DialogResult.Yes)
                     {
@@ -325,6 +327,9 @@ namespace ClickNLoad2MyJD
 
                         if (Jdownloader.LinkgrabberV2.AddLinks(addLinkRequest))
                         {
+                            int count = links.Split(new[] { "\r\n", "\r", "\n" },StringSplitOptions.None).Length;
+
+                            AppContext.ShowBalloon("Linkgrabber", $"{count} Links from successfully sent to {Jdownloader.Jd.Device.Name}", ToolTipIcon.Info);
                             Log($"Links from {source} successfully sent to {Jdownloader.Jd.Device.Name}");
                         }
                         else
@@ -496,7 +501,7 @@ namespace ClickNLoad2MyJD
                     Log(autostartItem.Checked ? "Enabled Autostart" : "Disabled Autostart");
                 };
 
-                var resetItem = new ToolStripMenuItem("Delete Credentials & Restart");
+                var resetItem = new ToolStripMenuItem("Delete Credentials && Restart");
                 resetItem.Click += (s, e) => ResetAndRestart();
 
                 var exitItem = new ToolStripMenuItem("Exit");
@@ -534,6 +539,13 @@ namespace ClickNLoad2MyJD
                 if (disposing)
                     DisposeTrayIcon();
                 base.Dispose(disposing);
+            }
+            public void ShowBalloon(string title, string message, ToolTipIcon icon = ToolTipIcon.Info)
+            {
+                if (trayIcon != null && trayIcon.Visible)
+                {
+                    trayIcon.ShowBalloonTip(3000, title, message, icon);
+                }
             }
         }
 
