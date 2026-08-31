@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using Microsoft.Win32;
+using System.Runtime.CompilerServices;
 
 namespace ClickNLoad2MyJD
 {
@@ -124,7 +125,7 @@ namespace ClickNLoad2MyJD
                         "MyJDownloader",
                         MessageBoxButtons.YesNo,
                         MessageBoxIcon.Warning);
-                        AppContext.ShowBalloon("Error", "Connection to MyJDownloader API failed.", ToolTipIcon.Error);
+                    AppContext.ShowBalloon("Error", "Connection to MyJDownloader API failed.", ToolTipIcon.Error);
 
                     if (result == DialogResult.Yes)
                     {
@@ -263,7 +264,7 @@ namespace ClickNLoad2MyJD
 
             Log("");
             Log("----------------------------------------");
-            Log($"HTTP {request.HttpMethod} {request.RawUrl}");
+            Log($"New Links are being added.");
 
             if (request.RawUrl == "/crossdomain.xml")
             {
@@ -288,14 +289,11 @@ namespace ClickNLoad2MyJD
                         requestBody = System.Web.HttpUtility.UrlDecode(reader.ReadToEnd());
                     }
 
-                    Log("Request body:");
-                    Log(requestBody);
-
                     string queryString = new Uri(request.Url.AbsoluteUri + "?" + requestBody).Query;
                     var queryDictionary = System.Web.HttpUtility.ParseQueryString(queryString);
 
                     string links = string.Empty;
-
+                    string package = string.Empty;
                     if (request.RawUrl.IndexOf("addcrypted2", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
                         Regex rgxData = new Regex("crypted=(.*?)(&|$)");
@@ -303,6 +301,9 @@ namespace ClickNLoad2MyJD
 
                         Regex rgxPass = new Regex("jk=(.*?){(.*?)}(&|$)");
                         string pass = rgxPass.Match(requestBody).Groups[2].ToString();
+
+                        Regex rgxPckg = new Regex("jk=(.*?){(.*?)}(&|$)");
+                        package = queryDictionary.Get("package");
 
                         var jsEngine = new Jurassic.ScriptEngine();
                         pass = jsEngine.Evaluate("(function (){" + pass + "})()").ToString();
@@ -312,38 +313,47 @@ namespace ClickNLoad2MyJD
                     else
                     {
                         links = queryDictionary.Get("urls");
+                        package = queryDictionary.Get("package");
                     }
 
                     string source = queryDictionary.Get("source");
 
                     Log($"Source: {source}");
 
-                    if (Jdownloader != null && !string.IsNullOrEmpty(links))
+                    if (!string.IsNullOrEmpty(package))
                     {
-                        var addLinkRequest = new AddLinkRequest()
-                        {
-                            Links = links.Replace(Environment.NewLine, ";")
-                        };
-
-                        if (Jdownloader.LinkgrabberV2.AddLinks(addLinkRequest))
-                        {
-                            int count = links.Split(new[] { "\r\n", "\r", "\n" },StringSplitOptions.None).Length;
-
-                            AppContext.ShowBalloon("Linkgrabber", $"{count} Links from successfully sent to {Jdownloader.Jd.Device.Name}", ToolTipIcon.Info);
-                            Log($"Links from {source} successfully sent to {Jdownloader.Jd.Device.Name}");
-                        }
-                        else
-                        {
-                            Log("JDownloader did not accept the links.");
-                        }
+                        Log($"Package: {package}");
                     }
-
                     if (!string.IsNullOrEmpty(links))
                     {
-                        Log($"Extracted links from {source}:");
-                        Log(links);
-                    }
 
+                        string[] linkLines = links.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                        if (Jdownloader != null)
+                        {
+                            var addLinkRequest = new AddLinkRequest()
+                            {
+                                Links = links.Replace(Environment.NewLine, ";")
+                            };
+
+                            if (Jdownloader.LinkgrabberV2.AddLinks(addLinkRequest))
+                            {
+                                AppContext.ShowBalloon("Linkgrabber", $"{linkLines.Length} Links from successfully sent to {Jdownloader.Jd.Device.Name}", ToolTipIcon.Info);
+                                Log($"Links from {source} successfully sent to {Jdownloader.Jd.Device.Name}");
+                                Log($"");
+                            }
+                            else
+                            {
+                                Log("JDownloader did not accept the links.");
+                            }
+                        }
+                        Log($"Extracted {linkLines.Length} links from {source}:");
+
+                        foreach (string link in linkLines)
+                        {
+                            string trimmedLink = link.Trim();
+                            Log(trimmedLink);
+                        }
+                    }
                     responseString = "success\r\n";
                 }
                 else
