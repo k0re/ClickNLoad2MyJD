@@ -338,7 +338,7 @@ namespace ClickNLoad2MyJD
                             if (Jdownloader.LinkgrabberV2.AddLinks(addLinkRequest))
                             {
                                 AppContext.ShowBalloon("Linkgrabber", $"{linkLines.Length} Links from successfully sent to {Jdownloader.Jd.Device.Name}", ToolTipIcon.Info);
-                                Log($"Links from {source} successfully sent to {Jdownloader.Jd.Device.Name}");
+                                Log($"{linkLines.Length} Links successfully sent to {Jdownloader.Jd.Device.Name}");
                                 Log($"");
                             }
                             else
@@ -346,7 +346,7 @@ namespace ClickNLoad2MyJD
                                 Log("JDownloader did not accept the links.");
                             }
                         }
-                        Log($"Extracted {linkLines.Length} links from {source}:");
+                        Log($"Extracted {linkLines.Length} links:");
 
                         foreach (string link in linkLines)
                         {
