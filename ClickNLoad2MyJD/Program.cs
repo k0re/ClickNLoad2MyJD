@@ -496,7 +496,7 @@ namespace ClickNLoad2MyJD
                     Log(autostartItem.Checked ? "Enabled Autostart" : "Disabled Autostart");
                 };
 
-                var resetItem = new ToolStripMenuItem("Delete Credentials & Restart");
+                var resetItem = new ToolStripMenuItem("Delete Credentials && Restart");
                 resetItem.Click += (s, e) => ResetAndRestart();
 
                 var exitItem = new ToolStripMenuItem("Exit");
