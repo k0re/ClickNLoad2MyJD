@@ -20,57 +20,61 @@ namespace ClickNLoad2MyJD
         private static DeviceHandler Jdownloader;
         private static bool processedLinks;
         static void Main(string[] args)
-        {         
-            if(!InitializeJdownloaderApi()){
+        {
+            if (!InitializeJdownloaderApi())
+            {
                 Console.WriteLine("The application will only print the links in terminal window");
             }
 
             Listener = new HttpListener();
-            Listener.Prefixes.Add( "http://*:9666/" );
+            Listener.Prefixes.Add("http://127.0.0.1:9666/");
 
             try
-            {  
+            {
                 Listener.Start();
                 Console.WriteLine("Listening for Click'N'Load requests...");
-    
+
                 Task.Run(() =>
                 {
                     while (true)
                     {
-                                        
-                            IAsyncResult result = Listener.BeginGetContext(new AsyncCallback(WebRequestCallback), Listener);
-                            while(true)
-                            {
-                                Thread.Sleep(400);
-                                if(processedLinks) break;
-                            }  
-                            processedLinks = false;  
-                        
+
+                        IAsyncResult result = Listener.BeginGetContext(new AsyncCallback(WebRequestCallback), Listener);
+                        while (true)
+                        {
+                            Thread.Sleep(400);
+                            if (processedLinks) break;
+                        }
+                        processedLinks = false;
+
                     }
                 });
 
                 Console.WriteLine("Press any key to cancel!");
                 Console.ReadLine();
 
-                Listener.Close();  
+                Listener.Close();
             }
             catch (HttpListenerException)
             {
                 Console.WriteLine("Seems like another application already running the port 9666, please close this application first.");
             }
-          
+
         }
 
-        private static bool InitializeJdownloaderApi(){
+        private static bool InitializeJdownloaderApi()
+        {
             var credentials = Config.GetOrAskForMyJdownloaderCredentials();
 
             Console.WriteLine("Try connecting to your MyJDownloader account...");
             var jDownloaderHandler = new JDownloaderHandler(credentials.Mail, credentials.Password, "ClickNListen");
-            if(!jDownloaderHandler.IsConnected){
+            if (!jDownloaderHandler.IsConnected)
+            {
                 Console.WriteLine("Connection to MyJDownloader API failed");
                 Console.WriteLine("Do you want to reenter your MyJDownloader account credentials? Type 'yes' or 'no'");
-                var input = AskForConsoleInputUntilValid(new string[]{ "yes", "no"});
-                if(input.Equals("yes")){
+                var input = AskForConsoleInputUntilValid(new string[] { "yes", "no" });
+                if (input.Equals("yes"))
+                {
                     Config.DeleteConfiguration();
                     return InitializeJdownloaderApi();
                 }
@@ -78,23 +82,27 @@ namespace ClickNLoad2MyJD
             }
 
             var devices = jDownloaderHandler.GetDevices().ToArray();
-            if(devices.Length == 0){
+            if (devices.Length == 0)
+            {
                 Console.WriteLine("Found 0 devices connected to your MyJDownloader account");
                 return false;
             }
-            else if (devices.Length > 1){
+            else if (devices.Length > 1)
+            {
                 Console.WriteLine("Found more than one devices connected to your MyJDownloader account. Please enter the number for the device you want to send links to.");
                 var validInputs = new List<string>();
-                
-                for(int i = 1; i <= devices.Length; i++){
-                    Console.WriteLine($"{i} - {devices[i-1]}");
+
+                for (int i = 1; i <= devices.Length; i++)
+                {
+                    Console.WriteLine($"{i} - {devices[i - 1]}");
                     validInputs.Add(i.ToString());
-                }                
+                }
 
                 int.TryParse(AskForConsoleInputUntilValid(validInputs.ToArray()), out var deviceNumber);
-                Jdownloader = jDownloaderHandler.GetDeviceHandler(devices[deviceNumber-1]);
+                Jdownloader = jDownloaderHandler.GetDeviceHandler(devices[deviceNumber - 1]);
             }
-            else{
+            else
+            {
                 var device = devices.First();
                 Console.WriteLine($"Found one device connected to your MyJDownloader account");
                 Jdownloader = jDownloaderHandler.GetDeviceHandler(device);
@@ -104,12 +112,15 @@ namespace ClickNLoad2MyJD
 
         }
 
-        private static string AskForConsoleInputUntilValid(string[] validInputs){
+        private static string AskForConsoleInputUntilValid(string[] validInputs)
+        {
             var input = Console.ReadLine();
-            if(validInputs.Contains(input)){
+            if (validInputs.Contains(input))
+            {
                 return input;
             }
-            else{
+            else
+            {
                 Console.WriteLine("Your input was not valid. Please try again.");
                 return AskForConsoleInputUntilValid(validInputs);
             }
@@ -117,7 +128,7 @@ namespace ClickNLoad2MyJD
 
         private static void WebRequestCallback(IAsyncResult result)
         {
-            if(Listener.IsListening)
+            if (Listener.IsListening)
             {
                 HttpListenerContext context = Listener.EndGetContext(result);
                 Listener.BeginGetContext(new AsyncCallback(WebRequestCallback), Listener);
@@ -133,6 +144,14 @@ namespace ClickNLoad2MyJD
 
             response.StatusCode = 200;
             response.Headers.Add("Content-Type: text/html");
+            
+            // CORS
+            response.Headers["Access-Control-Allow-Origin"] = "*";
+            response.Headers["Access-Control-Allow-Methods"] =
+                "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD";
+
+            response.Headers["Access-Control-Allow-Headers"] =
+                "Content-Type, Authorization, X-Referer, X-Requested-With, Accept, Origin";
 
             // crossdomain.xml
             if (context.Request.RawUrl == "/crossdomain.xml")
@@ -143,7 +162,8 @@ namespace ClickNLoad2MyJD
                     + "<allow-access-from domain=\"*\" />"
                     + "</cross-domain-policy>";
 
-            } else if( context.Request.RawUrl == "/jdcheck.js" )
+            }
+            else if (context.Request.RawUrl == "/jdcheck.js")
             {
                 responseString = "jdownloader=true; var version='18507';";
 
@@ -186,18 +206,24 @@ namespace ClickNLoad2MyJD
                     var source = queryDictionary.Get("source");
                     Console.WriteLine($"{Environment.NewLine}");
 
-                    if(Jdownloader != null){
-                        var addLinkRequest = new AddLinkRequest(){
-                            Links = links.Replace(Environment.NewLine, ";")
-                        };
-                        if(Jdownloader.LinkgrabberV2.AddLinks(addLinkRequest))
-                            Console.WriteLine($"Links from {source} successfully send to {Jdownloader.Jd.Device.Name}");
+                    if (Jdownloader != null)
+                    {
+                        if (links != string.Empty)
+                        {
+                            var addLinkRequest = new AddLinkRequest()
+                            {
+                                Links = links.Replace(Environment.NewLine, ";")
+                            };
+                            if (Jdownloader.LinkgrabberV2.AddLinks(addLinkRequest))
+                                Console.WriteLine($"Links from {source} successfully send to {Jdownloader.Jd.Device.Name}");
+                        }
                     }
-                    else{
+                    if (links != string.Empty)
+                    {
                         Console.WriteLine($"Extracted links from {source}:");
                         Console.Write(links);
+                        processedLinks = true;
                     }
-                    processedLinks = true;
 
                     responseString = "success\r\n";
                 }
