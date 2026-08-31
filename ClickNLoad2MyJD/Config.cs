@@ -10,62 +10,70 @@ namespace ClickNLoad2MyJD
         const string MYJD_MAIL = "MYJD_MAIL";
         const string MYJD_PASS = "MYJD_PASS";
 
-        public static void DeleteConfiguration(){
+        public static void DeleteConfiguration()
+        {
             using (IsolatedStorageFile isoStore = IsolatedStorageFile.GetStore(IsolatedStorageScope.User | IsolatedStorageScope.Domain | IsolatedStorageScope.Assembly, null, null))
             {
-                if(isoStore.FileExists(FILE_NAME)){
+                if (isoStore.FileExists(FILE_NAME))
+                {
                     isoStore.DeleteFile(FILE_NAME);
                 }
             }
         }
 
-        public static (string Mail, string Password) GetOrAskForMyJdownloaderCredentials()
+        public static (string Mail, string Password)? GetCredentials()
         {
-            (string Mail, string Password) credentials = (string.Empty, string.Empty);
             using (IsolatedStorageFile isoStore = IsolatedStorageFile.GetStore(IsolatedStorageScope.User | IsolatedStorageScope.Domain | IsolatedStorageScope.Assembly, null, null))
             {
-                if(isoStore.FileExists(FILE_NAME)){
-                    Console.WriteLine("Reading MyJDownloader account credentials from configuration...");
-                    using (var configFile = isoStore.OpenFile(FILE_NAME, FileMode.Open)){
-                        using (StreamReader streamReader = new StreamReader(configFile))
+                if (!isoStore.FileExists(FILE_NAME))
+                {
+                    return null;
+                }
+
+                (string Mail, string Password) credentials = (string.Empty, string.Empty);
+
+                using (var configFile = isoStore.OpenFile(FILE_NAME, FileMode.Open))
+                using (StreamReader streamReader = new StreamReader(configFile))
+                {
+                    var line = streamReader.ReadLine();
+                    while (line != null)
+                    {
+                        var lineSplit = line.Split('=', 2);
+                        if (lineSplit.Length > 1)
                         {
-                            var line = streamReader.ReadLine();
-                            while (line != null)
+                            if (lineSplit[0].Equals(MYJD_MAIL, StringComparison.OrdinalIgnoreCase))
                             {
-                                var lineSplit = line.Split('=');
-                                if(lineSplit.Length > 1){
-                                    if(lineSplit[0].Equals(MYJD_MAIL)){
-                                        credentials.Mail = lineSplit[1];
-                                    }
-                                    else if (lineSplit[0].Equals(MYJD_PASS)){
-                                        credentials.Password = lineSplit[1];
-                                    }
-                                }
-                                line = streamReader.ReadLine();
+                                credentials.Mail = lineSplit[1];
+                            }
+                            else if (lineSplit[0].Equals(MYJD_PASS, StringComparison.OrdinalIgnoreCase))
+                            {
+                                credentials.Password = lineSplit[1];
                             }
                         }
+                        line = streamReader.ReadLine();
                     }
                 }
-                else{
-                    Console.WriteLine("It seems to be the first start of the application. You have to enter your MyJDownloader credentials");
-                    Console.WriteLine("Please enter your MyJDownloader account mail address:");
-                    credentials.Mail = Console.ReadLine();
-                    Console.WriteLine("Please enter your MyJDownloader account password:");
-                    credentials.Password = Console.ReadLine();
-                    
-                    using (var configFile = isoStore.OpenFile(FILE_NAME, FileMode.CreateNew)){
-                        using (StreamWriter streamWriter = new StreamWriter(configFile))
-                        {
-                            string[] lines = { $"{MYJD_MAIL}={credentials.Mail}", $"{MYJD_PASS}={credentials.Password}" };
-                            foreach (string line in lines)
-                                streamWriter.WriteLine(line);
-                        }
-                    }
-                    Console.WriteLine("Successfully saved MyJDownloader account credentials");
+
+                if (string.IsNullOrWhiteSpace(credentials.Mail) || string.IsNullOrWhiteSpace(credentials.Password))
+                {
+                    return null;
                 }
+
+                return credentials;
             }
-            return credentials;
         }
 
+        public static void SaveCredentials(string mail, string password)
+        {
+            using (IsolatedStorageFile isoStore = IsolatedStorageFile.GetStore(IsolatedStorageScope.User | IsolatedStorageScope.Domain | IsolatedStorageScope.Assembly, null, null))
+            {
+                using (var configFile = isoStore.OpenFile(FILE_NAME, FileMode.Create))
+                using (StreamWriter streamWriter = new StreamWriter(configFile))
+                {
+                    streamWriter.WriteLine($"{MYJD_MAIL}={mail}");
+                    streamWriter.WriteLine($"{MYJD_PASS}={password}");
+                }
+            }
+        }
     }
 }

@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/ClickNLoad2MyJD/bin/Debug/netcoreapp3.1/ClickNLoad2MyJD.dll",
+            "program": "${workspaceFolder}/ClickNLoad2MyJD/bin/Debug/net8.0-windows/ClickNLoad2MyJD.dll",
             "args": [],
             "cwd": "${workspaceFolder}/ClickNLoad2MyJD",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
