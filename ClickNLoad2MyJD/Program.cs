@@ -214,8 +214,9 @@ namespace ClickNLoad2MyJD
                             {
                                 Links = links.Replace(Environment.NewLine, ";")
                             };
-                            if (Jdownloader.LinkgrabberV2.AddLinks(addLinkRequest))
+                            if (Jdownloader.LinkgrabberV2.AddLinks(addLinkRequest)) {
                                 Console.WriteLine($"Links from {source} successfully send to {Jdownloader.Jd.Device.Name}");
+                            }
                         }
                     }
                     if (links != string.Empty)
