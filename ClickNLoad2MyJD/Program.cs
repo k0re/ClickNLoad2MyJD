@@ -208,7 +208,7 @@ namespace ClickNLoad2MyJD
 
                     if (Jdownloader != null)
                     {
-                        if (links != string.Empty)
+                        if (links != string.Empty && links != null)
                         {
                             var addLinkRequest = new AddLinkRequest()
                             {
