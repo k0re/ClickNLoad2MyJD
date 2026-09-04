@@ -312,7 +312,7 @@ namespace ClickNLoad2MyJD
                     }
                     else
                     {
-                        links = queryDictionary.Get("urls");
+                        links = CleanText(queryDictionary.Get("urls"));
                         package = queryDictionary.Get("package");
                     }
 
@@ -374,6 +374,17 @@ namespace ClickNLoad2MyJD
             {
                 output.Write(buffer, 0, buffer.Length);
             }
+        }
+
+        static string CleanText(string text)
+        {
+            return string.Join("\r\n",
+                text
+                    .Replace(" ", "\r\n")
+                    .Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+            );
         }
 
         private static string DecryptLinks(string key, string data)
